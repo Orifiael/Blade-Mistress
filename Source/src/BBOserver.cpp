@@ -3516,12 +3516,17 @@ void BBOServer::HandleMessages(void)
 
                     // OFF-LINE HEAL
                     LongTime now;
-                    DWORD timeElapsed = 
-                                    curAvatar->charInfoArray[curAvatar->curCharacterIndex].
-                                              lastSavedTime.MinutesDifference(&now);
-                    curAvatar->charInfoArray[curAvatar->curCharacterIndex].health += 
-                        timeElapsed * 6;
-
+                    if (curAvatar->charInfoArray[curAvatar->curCharacterIndex].lifeTime > 0)
+                    {
+                        DWORD timeElapsed = 
+                                        curAvatar->charInfoArray[curAvatar->curCharacterIndex].
+                                                  lastSavedTime.MinutesDifference(&now);
+                        curAvatar->charInfoArray[curAvatar->curCharacterIndex].health += 
+                            timeElapsed * 6;
+                     }
+                    // Perseus_wraith: Fixed a newly created player starting with minus hp as new player has no lastSavedTime causing the player to have minus Health/MaxHealth (ex. -1233123123/48)
+                    // This actually works because of the bugfix at line 3568 pushing lifetime by one after first log
+                    
                     if (curAvatar->charInfoArray[curAvatar->curCharacterIndex].health >
                            curAvatar->charInfoArray[curAvatar->curCharacterIndex].healthMax)
                         curAvatar->charInfoArray[curAvatar->curCharacterIndex].health =
@@ -3577,6 +3582,9 @@ void BBOServer::HandleMessages(void)
                              curAvatar->charInfoArray[curAvatar->curCharacterIndex].name);
                         ss->SendToEveryoneNearBut(0, curAvatar->cellX, curAvatar->cellY,
                                         sizeof(infoText),(void *)&infoText);
+                        // Perseus_wraith: Push lifetime by one after first login. 
+                        // As a lifeTime takes 5 minutes, creating a char, and relogging within 5 minutes still caused *** <name> begins life ***.
+                        ++(curAvatar->charInfoArray[curAvatar->curCharacterIndex].lifeTime);
                     }
 
                     curAvatar->activeCounter = 0;
